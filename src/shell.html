@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patron Identity Resolution Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-venn@4.3.0/build/index.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <style>{{STYLE}}</style>
+</head>
+<body>
+  <header id="app-header">
+    <div id="logo-area" style="border:none;padding:0;">
+      <img src="Wordmark_1CR_White_750px.png" style="height:28px;">
+    </div>
+    <span id="org-name"></span>
+  </header>
+
+  <nav id="tab-bar">
+    <button class="tab-btn active" data-tab="tab1">Tab 1
+      <!-- label set by initFromConfig -->
+    </button>
+    <button class="tab-btn" data-tab="tab2">Tab 2</button>
+    <button class="tab-btn" data-tab="tab3">Tab 3</button>
+    <button class="tab-btn" data-tab="tab4">Tab 4
+      <span class="p3rl-badge"></span>
+    </button>
+  </nav>
+
+  <main id="app-main">
+
+    <!-- TAB 1 -->
+    <section id="tab1" class="tab-panel active">
+      <div class="filter-bar">
+        <div class="filter-group">
+          <span class="filter-label">Operator</span>
+          <select class="filter-select" id="t1-operator">
+            <option value="all">All Operators</option>
+            <!-- populated by initFromConfig -->
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Date Range</span>
+          <select class="filter-select" id="t1-dateRange">
+            <option value="last_30">Last 30 Days</option>
+            <option value="last_90">Last 90 Days</option>
+            <option value="current_season">Current Season</option>
+            <option value="full_year" selected>Full Year</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Channel</span>
+          <select class="filter-select" id="t1-channel">
+            <option value="all">All Channels</option>
+            <option value="mobile">Mobile App</option>
+            <option value="web">Web</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Account Status</span>
+          <select class="filter-select" id="t1-accountStatus">
+            <option value="all">All Accounts</option>
+            <option value="active_30">Active (30-day)</option>
+            <option value="active_60">Active (60-day)</option>
+            <option value="flagged">Flagged</option>
+          </select>
+        </div>
+        <button class="btn-reset" id="t1-reset">Reset</button>
+        <button class="btn-export" id="t1-export">Export CSV</button>
+      </div>
+      <div class="ban-row" id="t1-bans"></div>
+      <div class="chart-grid">
+        <div class="chart-card span-full">
+          <div class="chart-title">Wager Volume by Day</div>
+          <div class="chart-container" style="height:220px"><canvas id="t1-volumeByDay"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-grid chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-title">Volume on Marquee Days vs. Prior Year</div>
+          <div class="chart-container" style="height:220px"><canvas id="t1-marqueeBar"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Deposits vs. Withdrawals by Day</div>
+          <div class="chart-container" style="height:220px"><canvas id="t1-depWithDay"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-grid chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-title">Mobile vs. Web Split</div>
+          <div class="chart-container" style="height:200px"><canvas id="t1-channelDonut"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Wager Volume by State — Top 10</div>
+          <div class="chart-container" style="height:200px"><canvas id="t1-stateBar"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card span-full">
+          <div class="chart-title">Patron Geographic Distribution</div>
+          <div class="chart-container" style="height:300px"><svg id="t1-choropleth"></svg></div>
+        </div>
+      </div>
+      <div class="teaser-footer">
+        Cross-vertical patron activity is not visible from this system alone.
+        <a href="#" onclick="switchTab('tab4');return false;">See Patron Identity tab.</a>
+      </div>
+    </section>
+
+    <!-- TAB 2 -->
+    <section id="tab2" class="tab-panel">
+      <div class="filter-bar">
+        <div class="filter-group">
+          <span class="filter-label">Operator</span>
+          <select class="filter-select" id="t2-operator">
+            <option value="all">All Operators</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Date Range</span>
+          <select class="filter-select" id="t2-dateRange">
+            <option value="last_30">Last 30 Days</option>
+            <option value="last_90">Last 90 Days</option>
+            <option value="current_season">Current Season</option>
+            <option value="full_year" selected>Full Year</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Wager Type</span>
+          <select class="filter-select" id="t2-wagerType">
+            <option value="all">All Types</option>
+            <option value="pregame">Pre-Game</option>
+            <option value="live">Live</option>
+            <option value="parlay">Parlay</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Account Status</span>
+          <select class="filter-select" id="t2-accountStatus">
+            <option value="all">All Accounts</option>
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
+            <option value="excluded">Self-Excluded</option>
+          </select>
+        </div>
+        <button class="btn-reset" id="t2-reset">Reset</button>
+        <button class="btn-export" id="t2-export">Export CSV</button>
+      </div>
+      <div class="ban-row" id="t2-bans"></div>
+      <div class="chart-grid">
+        <div class="chart-card span-full">
+          <div class="chart-title">Wager Volume by Day</div>
+          <div class="chart-container" style="height:220px"><canvas id="t2-volumeByDay"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-grid chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-title">Volume by Operator</div>
+          <div class="chart-container" style="height:220px"><canvas id="t2-operatorBar"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Wager Type Mix by Month</div>
+          <div class="chart-container" style="height:220px"><canvas id="t2-wagerTypeMix"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-grid chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-title">Self-Exclusion Match Rate by Operator</div>
+          <div class="chart-container" style="height:220px"><canvas id="t2-exclusionByOp"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Patron Geographic Distribution</div>
+          <div class="chart-container" style="height:220px"><svg id="t2-choropleth"></svg></div>
+        </div>
+      </div>
+      <div class="teaser-footer">
+        Patron exclusion status is enforced per operator. Cross-operator breach detection requires identity resolution.
+        <a href="#" onclick="switchTab('tab4');return false;">See Patron Identity tab.</a>
+      </div>
+    </section>
+
+    <!-- TAB 3 -->
+    <section id="tab3" class="tab-panel">
+      <div class="filter-bar">
+        <div class="filter-group">
+          <span class="filter-label">Organization</span>
+          <select class="filter-select" id="t3-org">
+            <option value="all">All Organizations</option>
+            <!-- populated by initFromConfig -->
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Date Range</span>
+          <select class="filter-select" id="t3-dateRange">
+            <option value="last_30">Last 30 Days</option>
+            <option value="last_90">Last 90 Days</option>
+            <option value="current_season">Current Season</option>
+            <option value="full_year" selected>Full Year</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">ID Verification</span>
+          <select class="filter-select" id="t3-verificationStatus">
+            <option value="all">All Events</option>
+            <option value="verified">Verified ID Check</option>
+            <option value="not_verified">No ID Check</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Event Type</span>
+          <select class="filter-select" id="t3-eventType">
+            <option value="all">All Types</option>
+            <option value="bingo">Bingo</option>
+            <option value="raffle">Raffle</option>
+            <option value="casino_night">Casino Night</option>
+          </select>
+        </div>
+        <button class="btn-reset" id="t3-reset">Reset</button>
+        <button class="btn-export" id="t3-export">Export CSV</button>
+      </div>
+      <div class="ban-row" id="t3-bans"></div>
+      <div class="chart-grid">
+        <div class="chart-card span-full">
+          <div class="chart-title">Events per Month with Verification Rate</div>
+          <div class="chart-container" style="height:220px"><canvas id="t3-eventsVerifRate"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-grid chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-title">Receipts by Organization — Top 10</div>
+          <div class="chart-container" style="height:260px"><canvas id="t3-receiptsByOrg"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Event Type Mix</div>
+          <div class="chart-container" style="height:260px"><canvas id="t3-eventTypeMix"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-grid chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-title">Verification Rate by Event Type</div>
+          <div class="chart-container" style="height:220px"><canvas id="t3-verifByType"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Identity Check Coverage Over Time</div>
+          <div class="chart-container" style="height:220px"><canvas id="t3-verifTrend"></canvas></div>
+        </div>
+      </div>
+      <div class="teaser-footer">
+        Charitable gaming participants are not matched against the statewide exclusion list without identity resolution.
+        <a href="#" onclick="switchTab('tab4');return false;">See Patron Identity tab.</a>
+      </div>
+    </section>
+
+    <!-- TAB 4 -->
+    <section id="tab4" class="tab-panel">
+      <div id="t4-match-banner" class="match-banner"></div>
+      <div id="t4-delta-feed" class="delta-feed-panel"></div>
+      <div class="filter-bar">
+        <div class="filter-group">
+          <span class="filter-label">Operator</span>
+          <select class="filter-select" id="t4-operator">
+            <option value="all">All Operators</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Date Range</span>
+          <select class="filter-select" id="t4-dateRange">
+            <option value="last_30">Last 30 Days</option>
+            <option value="last_90">Last 90 Days</option>
+            <option value="current_season">Current Season</option>
+            <option value="full_year" selected>Full Year</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Patron Segment</span>
+          <select class="filter-select" id="t4-segment">
+            <option value="all">All Linked Patrons</option>
+            <option value="top_decile">Top Decile by Wager Frequency</option>
+            <option value="single_source">Single-Source Only</option>
+            <option value="exclusion_flagged">Exclusion Flagged</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Exclusion Status</span>
+          <select class="filter-select" id="t4-exclusionStatus">
+            <option value="all">All Patrons</option>
+            <option value="excluded_only">Excluded Only</option>
+            <option value="active_violations">Active Violations</option>
+          </select>
+        </div>
+        <button class="btn-reset" id="t4-reset">Reset</button>
+        <button class="btn-export" id="t4-export">Export CSV</button>
+      </div>
+      <div class="ban-row" id="t4-bans"></div>
+      <div class="chart-grid chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-title">Patron Population Overlap</div>
+          <div class="chart-container" style="height:300px"><canvas id="t4-venn"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Compliance Risk by Activity Level</div>
+          <div class="chart-container" style="height:300px"><canvas id="t4-riskScatter"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-grid chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-title">High-Activity Patron Watch List</div>
+          <div class="chart-container" style="height:280px"><canvas id="t4-watchList"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Exclusion Enforcement by Operator</div>
+          <div class="chart-container" style="height:280px"><canvas id="t4-enforcementBar"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card span-full">
+          <div class="chart-title">Patron Geographic Distribution</div>
+          <div class="chart-container" style="height:300px"><svg id="t4-choropleth"></svg></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>{{SCRIPT}}</script>
+</body>
+</html>
