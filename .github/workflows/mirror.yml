@@ -13,6 +13,10 @@ jobs:
           fetch-depth: 0
 
       - name: Push to mirror
+        env:
+          MIRROR_PAT: ${{ secrets.MIRROR_PAT }}
         run: |
-          git remote add mirror https://x-access-token:${{ secrets.MIRROR_PAT }}@github.com/Resultant-Prototype/gaming-regulator-demo.git
+          git config --global credential.helper store
+          echo "https://bvinsonrez:${MIRROR_PAT}@github.com" > ~/.git-credentials
+          git remote add mirror https://github.com/Resultant-Prototype/gaming-regulator-demo.git
           git push mirror main --force
