@@ -637,39 +637,52 @@
 
   </main>
 
-  <script>// ── config.ky.js ──
+  <script>// ── config.ny.js ──
 const CONFIG = (function(){
 return {
-  stateName:   'Kentucky',
-  agencyName:  'Kentucky Horse Racing & Gaming Corporation (KHRGC)',
-  agencyShort: 'KHRGC',
+  stateName:   'New York',
+  agencyName:  'New York State Gaming Commission (NYSGC)',
+  agencyShort: 'NYSGC',
   tabs: {
-    tab1: { label: 'Pari-Mutuel / ADW',   sourceLabel: 'ADW System' },
-    tab2: { label: 'Sports Wagering',      sourceLabel: 'Sportsbook Platform' },
-    tab3: { label: 'Charitable Gaming',    sourceLabel: 'Charitable Gaming Registry' },
-    tab4: { label: 'Patron Identity',      badge: 'Powered by P3RL + Delta Sharing' },
+    tab1: { label: 'Pari-Mutuel / ADW',        sourceLabel: 'ADW System' },
+    tab2: { label: 'Sports Wagering',           sourceLabel: 'Sportsbook Platform' },
+    tab3: { label: 'Commercial Casino / VLT',   sourceLabel: 'Casino Reporting System' },
+    tab4: { label: 'Patron Identity',           badge: 'Powered by P3RL + Delta Sharing' },
   },
   operators: [
-    { id: 'op1', name: 'Churchill Downs ADW',    vertical: 'tab1' },
-    { id: 'op2', name: 'Keeneland ADW',           vertical: 'tab1' },
+    { id: 'op1', name: 'NYRA / TwinSpires',      vertical: 'tab1' },
+    { id: 'op2', name: 'Off-Track Betting (OTB)', vertical: 'tab1' },
     { id: 'op3', name: 'FanDuel Sportsbook',      vertical: 'tab2' },
     { id: 'op4', name: 'DraftKings Sportsbook',   vertical: 'tab2' },
-    { id: 'op5', name: 'BetMGM Sportsbook',       vertical: 'tab2' },
-    { id: 'op6', name: 'Charitable Gaming Reg.',  vertical: 'tab3' },
+    { id: 'op5', name: 'Caesars Sportsbook',      vertical: 'tab2' },
+    { id: 'op6', name: 'MGM Resorts / BetMGM',   vertical: 'tab3' },
+    { id: 'op7', name: 'Resorts World Casino',    vertical: 'tab3' },
   ],
   dataScale: {
-    tab1_base_wager_volume:  1_800_000,
-    tab2_base_wager_volume:  2_400_000,
-    tab3_base_receipts:        420_000,
-    patron_population:         300_000,
-    active_exclusions:           5_000,
+    tab1_base_wager_volume:  14_000_000,
+    tab2_base_wager_volume:  20_000_000,
+    tab3_base_receipts:       8_000_000,
+    patron_population:       2_000_000,
+    active_exclusions:          22_000,
   },
-  seasonLabel: 'Current Season (May–Oct)',
-  seasonStart: '2025-05-01',
-  seasonEnd:   '2025-10-31',
+  tab3_orgs: [
+    'Resorts World NYC (Aqueduct)', 'MGM Empire City (Yonkers)', 'Jake\'s 58 Hotel & Casino',
+    'Saratoga Casino Hotel', 'Tioga Downs Casino Resort', 'Batavia Downs Gaming',
+    'Vernon Downs / Finger Lakes Gaming', 'del Lago Resort & Casino', 'Rivers Casino & Resort (Schenectady)',
+    'Resorts World Catskills', 'Point Place Casino (Bridgeport)', 'Yellow Brick Road Casino (Chittenango)',
+    'Lake Ontario Event & Conference Center', 'Seneca Niagara Resort & Casino',
+    'Seneca Buffalo Creek Casino', 'Seneca Allegany Resort & Casino',
+    'Akwesasne Mohawk Casino Resort', 'Turning Stone Resort Casino',
+    'Oneida Indian Nation — Point Place', 'Oil Springs VLT Facility',
+    'Monticello Casino & Raceway', 'Saratoga Gaming (NYRA OTB)', 'Vernon Downs Harness Racing',
+    'Finger Lakes RACETRACK VLT', 'Capital District OTB — VLT Lounge',
+  ],
+  seasonLabel: 'Current Season (Sep–Jan)',
+  seasonStart: '2025-09-01',
+  seasonEnd:   '2026-01-31',
   stateWeights: [
-    ['KY', 300], ['TN', 20], ['OH', 15], ['IN', 12], ['WV', 8],
-    ['VA', 6],   ['FL', 4],  ['TX', 3],  ['CA', 2],  ['NY', 2],
+    ['NY', 400], ['NJ', 40], ['CT', 20], ['PA', 15], ['FL', 8],
+    ['MA', 6],   ['CA', 4],  ['TX', 3],  ['OH', 2],  ['IL', 2],
   ],
 };
 })();
@@ -868,21 +881,7 @@ console.log('DAILY_SPORTS OK — total volume $' +
 // EVENTS_CHARITABLE
 // ═══════════════════════════════════════════════
 
-const CHARITABLE_ORGS = [
-  'St. Michael Parish', 'Lexington Lions Club', 'Louisville Rotary', 'Fayette County VFW Post 1',
-  'Bluegrass Veterans Foundation', 'Kentucky 4-H Foundation', 'Hardin County Elks Lodge',
-  'Murray State Alumni Assoc.', 'Northern KY Fraternal Order', 'Louisville Catholic Charities',
-  'Owensboro Knights of Columbus', 'Bardstown Community Foundation', 'Elizabethtown Eagles Aerie',
-  'Henderson County Youth Sports', 'Pikeville Moose Lodge', 'Paducah Shrine Club',
-  'Bowling Green Civitan Club', 'Somerset AMVETS Post 42', 'Georgetown Kiwanis Club',
-  'Richmond Area United Way', 'Covington St. Vincent dePaul', 'Danville Historical Society',
-  'Morehead State Univ. Foundation', 'London Optimist Club', 'Corbin VFW Auxiliary',
-  'Hopkinsville American Legion', 'Frankfort Rotary Foundation', 'Nicholasville Jaycees',
-  'Campbellsville Univ. Athletics', 'Winchester Lions Club', 'Ashland Area Food Bank',
-  'Maysville Elks Lodge', 'Shelbyville Community Foundation', 'LaGrange Lions Club',
-  'Versailles Rotary', 'Leitchfield VFW Post', 'Madisonville Eagles',
-  'Glasgow Kiwanis', 'Middlesboro Lions Club', 'Harlan Veterans Foundation',
-];
+const CHARITABLE_ORGS = CONFIG.tab3_orgs;
 const EVENT_TYPES = ['bingo', 'raffle', 'casino_night'];
 const CHAR_TOTAL_WEIGHT = SEASONALITY_CHAR.reduce((a, b) => a + b, 0);
 

@@ -187,21 +187,7 @@ console.log('DAILY_SPORTS OK — total volume $' +
 // EVENTS_CHARITABLE
 // ═══════════════════════════════════════════════
 
-const CHARITABLE_ORGS = [
-  'St. Michael Parish', 'Lexington Lions Club', 'Louisville Rotary', 'Fayette County VFW Post 1',
-  'Bluegrass Veterans Foundation', 'Kentucky 4-H Foundation', 'Hardin County Elks Lodge',
-  'Murray State Alumni Assoc.', 'Northern KY Fraternal Order', 'Louisville Catholic Charities',
-  'Owensboro Knights of Columbus', 'Bardstown Community Foundation', 'Elizabethtown Eagles Aerie',
-  'Henderson County Youth Sports', 'Pikeville Moose Lodge', 'Paducah Shrine Club',
-  'Bowling Green Civitan Club', 'Somerset AMVETS Post 42', 'Georgetown Kiwanis Club',
-  'Richmond Area United Way', 'Covington St. Vincent dePaul', 'Danville Historical Society',
-  'Morehead State Univ. Foundation', 'London Optimist Club', 'Corbin VFW Auxiliary',
-  'Hopkinsville American Legion', 'Frankfort Rotary Foundation', 'Nicholasville Jaycees',
-  'Campbellsville Univ. Athletics', 'Winchester Lions Club', 'Ashland Area Food Bank',
-  'Maysville Elks Lodge', 'Shelbyville Community Foundation', 'LaGrange Lions Club',
-  'Versailles Rotary', 'Leitchfield VFW Post', 'Madisonville Eagles',
-  'Glasgow Kiwanis', 'Middlesboro Lions Club', 'Harlan Veterans Foundation',
-];
+const CHARITABLE_ORGS = CONFIG.tab3_orgs;
 const EVENT_TYPES = ['bingo', 'raffle', 'casino_night'];
 const CHAR_TOTAL_WEIGHT = SEASONALITY_CHAR.reduce((a, b) => a + b, 0);
 
