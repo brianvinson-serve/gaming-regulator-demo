@@ -8,6 +8,12 @@ function deterministicVariance(dateStr, id, salt = 0) {
   return 0.88 + ((h >>> 0) % 240) / 1000;
 }
 
+function deterministicProb(dateStr, id, salt = 0) {
+  let h = salt;
+  for (const c of (dateStr + String(id))) h = (h * 31 + c.charCodeAt(0)) & 0xFFFFFFFF;
+  return ((h >>> 0) % 1000) / 1000;
+}
+
 function weightedPick(items, weights, seed) {
   const total = weights.reduce((a, b) => a + b, 0);
   let h = seed;
@@ -222,7 +228,7 @@ function generateEventsCharitable() {
       const receipts = Math.round(baseRec * deterministicVariance(dateStr, orgIdx, 30));
       const attendee_count = Math.round(receipts / (etype === 'casino_night' ? 45 : 18));
       const verRate  = getVerifRate(dateStr);
-      const identity_verification_flag = deterministicVariance(dateStr, orgIdx, 31) < verRate;
+      const identity_verification_flag = deterministicProb(dateStr, orgIdx, 31) < verRate;
       events.push({
         event_id:                    `CE-${String(idx + 1).padStart(4, '0')}`,
         org_name:                    orgName,
@@ -232,8 +238,8 @@ function generateEventsCharitable() {
         receipts,
         attendee_count,
         identity_verification_flag,
-        exclusion_match_count:       identity_verification_flag && deterministicVariance(dateStr, orgIdx, 32) < 0.08 ? 1 : 0,
-        has_open_compliance_item:    deterministicVariance(dateStr, orgIdx, 33) < 0.12,
+        exclusion_match_count:       identity_verification_flag && deterministicProb(dateStr, orgIdx, 32) < 0.08 ? 1 : 0,
+        has_open_compliance_item:    deterministicProb(dateStr, orgIdx, 33) < 0.12,
       });
     }
   });

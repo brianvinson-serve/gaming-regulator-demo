@@ -35,11 +35,17 @@ const EXCL_COLORS = {
 // CHOROPLETH HELPER (uses bundled US_TOPOLOGY)
 // ═══════════════════════════════════════════════
 
-function renderChoropleth(svgId, patronsByState) {
+function renderChoropleth(svgId, patronsByState, _attempt) {
+  const svgEl = document.getElementById(svgId);
+  const measuredW = svgEl.getBoundingClientRect().width;
+  if (measuredW < 200 && (_attempt || 0) < 8) {
+    requestAnimationFrame(() => renderChoropleth(svgId, patronsByState, (_attempt || 0) + 1));
+    return;
+  }
   const svg  = d3.select('#' + svgId);
   svg.selectAll('*').remove();
-  const w = svg.node().getBoundingClientRect().width  || 700;
-  const h = svg.node().getBoundingClientRect().height || 300;
+  const w = measuredW || 700;
+  const h = svgEl.getBoundingClientRect().height || 300;
   svg.attr('width', w).attr('height', h);
 
   const statesGeo = topojson.feature(US_TOPOLOGY, US_TOPOLOGY.objects.states);
@@ -49,7 +55,7 @@ function renderChoropleth(svgId, patronsByState) {
   const maxVal = Math.max(1, ...Object.values(patronsByState));
   const colorScale = d3.scaleSequential()
     .domain([0, maxVal])
-    .interpolator(d3.interpolate('#E8F0F8', PALETTE.navy));
+    .interpolator(d3.interpolate('#B8CCE0', PALETTE.navy));
 
   const FIPS_ABBREV = {
     '01':'AL','02':'AK','04':'AZ','05':'AR','06':'CA','08':'CO','09':'CT',
@@ -575,14 +581,19 @@ function renderTab4() {
   });
 
   // Chart 2: Compliance Risk Scatter
+  // Render order: excluded last so those dots paint on top of clean's ~880 points.
+  // Legend is re-sorted to clean→excluded severity order via generateLabels.
   destroyChart('t4-riskScatter');
-  const EXCL_LIST = ['clean','monitored','flagged','excluded'];
-  const scatterDatasets = EXCL_LIST.map(status => ({
+  const EXCL_RENDER_ORDER = ['clean','monitored','flagged','excluded'];
+  const scatterDatasets = EXCL_RENDER_ORDER.map(status => ({
     label: status.charAt(0).toUpperCase() + status.slice(1),
     data: patrons.filter(p => p.exclusion_status === status && p.total_wager_frequency > 0)
       .map((p, i) => ({
         x: p.verticals_active + ((p.total_wager_frequency * 3 + i * 7) % 100) / 700 - 0.07,
         y: p.total_wager_frequency,
+        _status:    p.exclusion_status,
+        _verticals: p.linked_verticals,
+        _breach:    p.breach_detected,
       })),
     backgroundColor: EXCL_COLORS[status] + 'BB',
     pointRadius: 4,
@@ -591,7 +602,29 @@ function renderTab4() {
     type: 'scatter',
     data: { datasets: scatterDatasets },
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            generateLabels: chart => {
+              const items = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+              const order = ['Clean','Monitored','Flagged','Excluded'];
+              return items.sort((a, b) => order.indexOf(a.text) - order.indexOf(b.text));
+            },
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const d = ctx.raw;
+              const status = d._status.charAt(0).toUpperCase() + d._status.slice(1);
+              const verts  = (d._verticals || '').replace(/\|/g, ' + ');
+              const breach = d._breach ? ' • Breach detected' : '';
+              return `${status} • ${verts} • ${fmt.num(d.y)} wagers${breach}`;
+            },
+          },
+        },
+      },
       scales: {
         x: { min: 0.5, max: 3.5, title: { display: true, text: 'Regulated Verticals Active' },
           ticks: { stepSize: 1, callback: v => v === 1 ? '1 vertical' : v === 2 ? '2 verticals' : v === 3 ? '3 verticals' : '' } },
