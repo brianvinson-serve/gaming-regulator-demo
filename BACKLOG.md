@@ -17,7 +17,7 @@ Build with `node build.js` (KY default) or `node build.js --config ny` / `--conf
 
 ## Enhancements
 
-- [ ] **Chart informational tooltips ("i" icons) on all charts** — The `CHART_TOOLTIPS` object and `applyChartTooltips()` infrastructure already exists in `main.js` and fires on every render, but no `renderTabN()` function actually populates `CHART_TOOLTIPS[canvasId]`. Fix: add a `CHART_TOOLTIPS['canvas-id'] = 'explanation text'` assignment in each render function before the `new Chart(...)` call. Write one sentence per chart explaining what it shows and what to look for — focus on what a regulator would ask ("Why does this spike in May?" "What does a high rate here mean?"). All four tabs need entries. Affects: `src/charts.js`.
+- [x] **Chart informational tooltips ("i" icons) on all charts** — The `CHART_TOOLTIPS` object and `applyChartTooltips()` infrastructure already exists in `main.js` and fires on every render, but no `renderTabN()` function actually populates `CHART_TOOLTIPS[canvasId]`. Fix: add a `CHART_TOOLTIPS['canvas-id'] = 'explanation text'` assignment in each render function before the `new Chart(...)` call. Write one sentence per chart explaining what it shows and what to look for — focus on what a regulator would ask ("Why does this spike in May?" "What does a high rate here mean?"). All four tabs need entries. Affects: `src/charts.js`.
 
 ---
 

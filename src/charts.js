@@ -137,6 +137,7 @@ function renderTab1() {
 
   // Chart 1: Wager Volume by Day (line)
   destroyChart('t1-volumeByDay');
+  CHART_TOOLTIPS['t1-volumeByDay'] = 'Daily handle across all licensed ADW operators — spikes correspond to marquee race days; a sudden off-calendar spike warrants operator inquiry.';
   const dayLabels = [...new Set(daily.map(r => r.date))].sort();
   const dayData   = dayLabels.map(dt => daily.filter(r => r.date === dt).reduce((s,r) => s + r.wager_volume, 0));
   CHARTS['t1-volumeByDay'] = new Chart(document.getElementById('t1-volumeByDay'), {
@@ -157,6 +158,7 @@ function renderTab1() {
 
   // Chart 2: Marquee Days vs. Prior Year (grouped bar)
   destroyChart('t1-marqueeBar');
+  CHART_TOOLTIPS['t1-marqueeBar'] = 'Handle on marquee race days vs. prior year — a year-over-year decline may indicate ADW market share shifting to sports wagering or platform attrition.';
   const marqueeRows = DAILY_PMU.filter(r => r.is_marquee);
   const marqueeNames = [...new Set(marqueeRows.map(r => r.event_name))];
   const currentVol = marqueeNames.map(n => marqueeRows.filter(r => r.event_name === n).reduce((s,r) => s + r.wager_volume, 0));
@@ -175,6 +177,7 @@ function renderTab1() {
 
   // Chart 3: Deposits vs. Withdrawals by Day (line, dual series)
   destroyChart('t1-depWithDay');
+  CHART_TOOLTIPS['t1-depWithDay'] = 'Net cash flow signal — a persistent gap between deposits and withdrawals can indicate patron retention issues or operator financial stress worth flagging.';
   const depByDay  = dayLabels.map(dt => daily.filter(r => r.date === dt).reduce((s,r) => s + r.deposits, 0));
   const withByDay = dayLabels.map(dt => daily.filter(r => r.date === dt).reduce((s,r) => s + r.withdrawals, 0));
   CHARTS['t1-depWithDay'] = new Chart(document.getElementById('t1-depWithDay'), {
@@ -194,6 +197,7 @@ function renderTab1() {
 
   // Chart 4: Mobile vs. Web Split (donut)
   destroyChart('t1-channelDonut');
+  CHART_TOOLTIPS['t1-channelDonut'] = 'Mobile-dominant operators require app-specific exclusion enforcement; an operator with unusually low mobile share may have compliance gaps in their mobile platform.';
   const webVol = daily.reduce((s,r) => s + r.web_wager, 0);
   CHARTS['t1-channelDonut'] = new Chart(document.getElementById('t1-channelDonut'), {
     type: 'doughnut',
@@ -208,6 +212,7 @@ function renderTab1() {
 
   // Chart 5: Wager Volume by State — Top 10 (horizontal bar)
   destroyChart('t1-stateBar');
+  CHART_TOOLTIPS['t1-stateBar'] = 'Out-of-state wagering volume on Kentucky-licensed ADW platforms — high out-of-state share is expected for horse racing but informs multi-state enforcement coordination.';
   const stateData = CONFIG.stateWeights.map(([st, wt]) => ({ state: st, vol: Math.round(totalVolume * wt / CONFIG.stateWeights.reduce((s,[,w]) => s+w, 0)) }))
     .sort((a,b) => b.vol - a.vol).slice(0, 10);
   CHARTS['t1-stateBar'] = new Chart(document.getElementById('t1-stateBar'), {
@@ -220,6 +225,7 @@ function renderTab1() {
   });
 
   // Chart 6: Choropleth
+  CHART_TOOLTIPS['t1-choropleth'] = 'Where ADW-registered patrons are located — concentration outside Kentucky is normal but informs where cross-state exclusion list sharing would have the most impact.';
   const patronsByState = buildPatronsByState(PATRONS.filter(p => p.adw_patron_id));
   renderChoropleth('t1-choropleth', patronsByState);
 }
@@ -262,6 +268,7 @@ function renderTab2() {
 
   // Chart 1: Wager Volume by Day (line)
   destroyChart('t2-volumeByDay');
+  CHART_TOOLTIPS['t2-volumeByDay'] = 'Daily sports wagering handle — NFL season drives the Sep–Jan peak; outlier days that don\'t align with known marquee events may warrant operator inquiry.';
   const dayLabels = [...new Set(daily.map(r => r.date))].sort();
   const dayData   = dayLabels.map(dt => daily.filter(r => r.date === dt).reduce((s,r) => s + r.wager_volume, 0));
   CHARTS['t2-volumeByDay'] = new Chart(document.getElementById('t2-volumeByDay'), {
@@ -282,6 +289,7 @@ function renderTab2() {
 
   // Chart 2: Volume by Operator (grouped bar)
   destroyChart('t2-operatorBar');
+  CHART_TOOLTIPS['t2-operatorBar'] = 'Handle by licensed sportsbook — a single operator holding over half of total handle is a market concentration flag worth noting in operator reviews.';
   const opVolume = SPORTS_OPS.map(op => ({
     name: op.name,
     vol:  daily.filter(r => r.operator_id === op.id).reduce((s,r) => s + r.wager_volume, 0),
@@ -301,6 +309,7 @@ function renderTab2() {
 
   // Chart 3: Wager Type Mix by Month (stacked bar)
   destroyChart('t2-wagerTypeMix');
+  CHART_TOOLTIPS['t2-wagerTypeMix'] = 'Parlay share outpacing pre-game volume is a responsible gambling signal — parlays carry higher house edge and appear more frequently in problem gambling case histories.';
   const months = [...new Set(daily.map(r => r.date.slice(0,7)))].sort();
   CHARTS['t2-wagerTypeMix'] = new Chart(document.getElementById('t2-wagerTypeMix'), {
     type: 'bar',
@@ -317,6 +326,7 @@ function renderTab2() {
 
   // Chart 4: Self-Exclusion Match Rate by Operator (horizontal bar)
   destroyChart('t2-exclusionByOp');
+  CHART_TOOLTIPS['t2-exclusionByOp'] = 'Self-exclusion flags per 1,000 active accounts — a very low rate can mean strong pre-wager blocking or inadequate detection; both warrant follow-up with the operator.';
   const opExclData = SPORTS_OPS.map(op => {
     const rows = DAILY_SPORTS.filter(r => r.operator_id === op.id);
     const flags = rows.reduce((s,r) => s + r.self_exclusion_flags, 0);
@@ -337,6 +347,7 @@ function renderTab2() {
   });
 
   // Chart 5: Choropleth
+  CHART_TOOLTIPS['t2-choropleth'] = 'Where sports wagering patrons are located — significant out-of-state volume may trigger questions about interstate compact obligations or tax allocation.';
   renderChoropleth('t2-choropleth', buildPatronsByState(PATRONS.filter(p => p.sports_patron_id)));
 }
 
@@ -374,6 +385,7 @@ function renderTab3() {
 
   // Chart 1: Events per Month with Verification Rate overlay (bar + line combo)
   destroyChart('t3-eventsVerifRate');
+  CHART_TOOLTIPS['t3-eventsVerifRate'] = 'Event volume and the share that ran identity verification each month — the rate should trend upward as compliance expectations increase through the year.';
   const months = ['2025-01','2025-02','2025-03','2025-04','2025-05','2025-06',
                   '2025-07','2025-08','2025-09','2025-10','2025-11','2025-12'];
   const eventsByMo  = months.map(m => EVENTS_CHARITABLE.filter(e => e.date.startsWith(m)).length);
@@ -403,6 +415,7 @@ function renderTab3() {
 
   // Chart 2: Receipts by Organization — Top 10 (horizontal bar)
   destroyChart('t3-receiptsByOrg');
+  CHART_TOOLTIPS['t3-receiptsByOrg'] = 'Top organizations by gross receipts — high-revenue organizations that do not run identity checks represent the largest unmonitored exclusion exposure in this vertical.';
   const orgReceipts = [...new Set(EVENTS_CHARITABLE.map(e => e.org_name))]
     .map(org => ({ org, total: EVENTS_CHARITABLE.filter(e => e.org_name === org).reduce((s,e) => s + e.receipts, 0) }))
     .sort((a,b) => b.total - a.total).slice(0, 10);
@@ -419,6 +432,7 @@ function renderTab3() {
 
   // Chart 3: Event Type Mix (donut)
   destroyChart('t3-eventTypeMix');
+  CHART_TOOLTIPS['t3-eventTypeMix'] = 'Casino nights carry the highest per-event receipts and the most excluded-patron risk — check whether verification rates track event type risk in the chart below.';
   const typeCounts = { bingo: 0, raffle: 0, casino_night: 0 };
   events.forEach(e => { typeCounts[e.event_type] = (typeCounts[e.event_type] || 0) + 1; });
   CHARTS['t3-eventTypeMix'] = new Chart(document.getElementById('t3-eventTypeMix'), {
@@ -434,6 +448,7 @@ function renderTab3() {
 
   // Chart 4: Verification Rate by Event Type (grouped bar)
   destroyChart('t3-verifByType');
+  CHART_TOOLTIPS['t3-verifByType'] = 'Whether verification rates are higher for riskier event formats — a flat rate across all types means organizations are not calibrating compliance to event-level risk.';
   const typeVerif = ['bingo','raffle','casino_night'].map(t => {
     const te = EVENTS_CHARITABLE.filter(e => e.event_type === t);
     return te.length > 0 ? te.filter(e => e.identity_verification_flag).length / te.length : 0;
@@ -452,6 +467,7 @@ function renderTab3() {
 
   // Chart 5: Identity Check Coverage Trend (line)
   destroyChart('t3-verifTrend');
+  CHART_TOOLTIPS['t3-verifTrend'] = 'Year-to-date trajectory of identity check adoption — a flat or declining trend means the verification requirement is not taking hold without active enforcement.';
   CHARTS['t3-verifTrend'] = new Chart(document.getElementById('t3-verifTrend'), {
     type: 'line',
     data: { labels: months.map(m => m.slice(5)), datasets: [{
@@ -534,6 +550,7 @@ function renderTab4() {
 
   // Chart 1: Patron Population Overlap — Venn Diagram
   destroyChart('t4-venn');
+  CHART_TOOLTIPS['t4-venn'] = 'Patron overlap across all three regulated verticals — patrons in the all-three intersection are the highest-risk population for cross-vertical exclusion evasion.';
   const t1Label = CONFIG.tabs.tab1.label;
   const t2Label = CONFIG.tabs.tab2.label;
   const t3Label = CONFIG.tabs.tab3.label;
@@ -581,6 +598,7 @@ function renderTab4() {
   });
 
   // Chart 2: Compliance Risk Scatter
+  CHART_TOOLTIPS['t4-riskScatter'] = 'Each dot is a patron — position shows verticals active vs. wager frequency; excluded patrons at high frequency across multiple verticals are the active breach queue to act on.';
   // Render order: excluded last so those dots paint on top of clean's ~880 points.
   // Legend is re-sorted to clean→excluded severity order via generateLabels.
   destroyChart('t4-riskScatter');
@@ -636,6 +654,7 @@ function renderTab4() {
 
   // Chart 3: High-Activity Patron Watch List (horizontal stacked bar)
   destroyChart('t4-watchList');
+  CHART_TOOLTIPS['t4-watchList'] = 'The ten highest-frequency patrons in the current filter — excluded patrons here have already breached; unexcluded high-frequency patrons are proactive monitoring candidates.';
   const topPatrons = [...patrons].sort((a,b) => b.total_wager_frequency - a.total_wager_frequency).slice(0, 10);
   const avgFreq    = patrons.length ? patrons.reduce((s,p) => s + p.total_wager_frequency, 0) / patrons.length : 0;
   CHARTS['t4-watchList'] = new Chart(document.getElementById('t4-watchList'), {
@@ -656,6 +675,7 @@ function renderTab4() {
 
   // Chart 4: Exclusion Enforcement by Operator (grouped bar)
   destroyChart('t4-enforcementBar');
+  CHART_TOOLTIPS['t4-enforcementBar'] = 'For each operator: exclusions received, blocked before first wager, and confirmed breaches — the gap between received and blocked is the enforcement lag P3RL is designed to close.';
   CHARTS['t4-enforcementBar'] = new Chart(document.getElementById('t4-enforcementBar'), {
     type: 'bar',
     data: {
@@ -673,5 +693,6 @@ function renderTab4() {
   });
 
   // Chart 5: Choropleth
+  CHART_TOOLTIPS['t4-choropleth'] = 'Where identity-resolved patrons are located — multi-state clusters indicate where cross-jurisdictional enforcement coordination would have the highest impact.';
   renderChoropleth('t4-choropleth', buildPatronsByState(patrons));
 }
