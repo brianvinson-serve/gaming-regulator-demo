@@ -1,0 +1,18 @@
+name: Mirror to Resultant-Prototype
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to mirror
+        run: |
+          git remote add mirror https://x-access-token:${{ secrets.MIRROR_PAT }}@github.com/Resultant-Prototype/gaming-regulator-demo.git
+          git push mirror main --force
