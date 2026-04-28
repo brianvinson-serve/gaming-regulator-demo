@@ -12,11 +12,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Push to mirror via deploy key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.MIRROR_DEPLOY_KEY }}
+          known_hosts: unnecessary
+          if_key_exists: replace
+
       - name: Push to mirror
-        env:
-          MIRROR_PAT: ${{ secrets.MIRROR_PAT }}
         run: |
-          git config --global credential.helper store
-          echo "https://bvinsonrez:${MIRROR_PAT}@github.com" > ~/.git-credentials
-          git remote add mirror https://github.com/Resultant-Prototype/gaming-regulator-demo.git
+          git remote add mirror git@github.com:Resultant-Prototype/gaming-regulator-demo.git
           git push mirror main --force
