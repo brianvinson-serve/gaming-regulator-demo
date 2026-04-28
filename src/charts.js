@@ -8,9 +8,20 @@ function destroyChart(id) {
   if (CHARTS[id]) { CHARTS[id].destroy(); delete CHARTS[id]; }
 }
 
-Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+Chart.defaults.font.family = "'DM Sans', system-ui, sans-serif";
 Chart.defaults.font.size   = 12;
 Chart.defaults.color       = '#6B7280';
+
+const MONTH_ABBREVS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDateLabel(dateStr) {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  return MONTH_ABBREVS[parseInt(parts[1]) - 1] + ' ' + parseInt(parts[2]);
+}
+function fmtMonthLabel(yyyyMM) {
+  if (!yyyyMM) return '';
+  return MONTH_ABBREVS[parseInt(yyyyMM.split('-')[1]) - 1];
+}
 
 const PALETTE = {
   navy:   '#1B2A4A',
@@ -55,7 +66,7 @@ function renderChoropleth(svgId, patronsByState, _attempt) {
   const maxVal = Math.max(1, ...Object.values(patronsByState));
   const colorScale = d3.scaleSequential()
     .domain([0, maxVal])
-    .interpolator(d3.interpolate('#B8CCE0', PALETTE.navy));
+    .interpolator(d3.interpolate('#C8DCF0', PALETTE.navy));
 
   const FIPS_ABBREV = {
     '01':'AL','02':'AK','04':'AZ','05':'AR','06':'CA','08':'CO','09':'CT',
@@ -67,6 +78,14 @@ function renderChoropleth(svgId, patronsByState, _attempt) {
     '49':'UT','50':'VT','51':'VA','53':'WA','54':'WV','55':'WI','56':'WY',
   };
 
+  // D3 hover tooltip — remove stale one first
+  const parentEl = svgEl.parentNode;
+  const existingTip = parentEl.querySelector('.map-tooltip');
+  if (existingTip) existingTip.remove();
+  const tipDiv = document.createElement('div');
+  tipDiv.className = 'map-tooltip';
+  parentEl.appendChild(tipDiv);
+
   svg.selectAll('path')
     .data(statesGeo.features)
     .enter().append('path')
@@ -77,12 +96,34 @@ function renderChoropleth(svgId, patronsByState, _attempt) {
       })
       .attr('stroke', '#fff')
       .attr('stroke-width', 0.5)
-    .append('title')
-      .text(d => {
+      .style('cursor', 'pointer')
+      .on('mouseover', function(event, d) {
         const abbrev = FIPS_ABBREV[String(d.id).padStart(2,'0')] || '?';
         const count  = patronsByState[abbrev] || 0;
-        return `${abbrev}: ${count.toLocaleString()} patrons`;
+        d3.select(this).attr('stroke-width', 2).attr('stroke', '#00A896');
+        tipDiv.style.display = 'block';
+        tipDiv.innerHTML = `<strong>${abbrev}</strong><br>${count.toLocaleString()} patrons`;
+      })
+      .on('mousemove', function(event) {
+        const parentRect = parentEl.getBoundingClientRect();
+        tipDiv.style.left = (event.clientX - parentRect.left + 14) + 'px';
+        tipDiv.style.top  = (event.clientY - parentRect.top  - 44) + 'px';
+      })
+      .on('mouseout', function() {
+        d3.select(this).attr('stroke-width', 0.5).attr('stroke', '#fff');
+        tipDiv.style.display = 'none';
       });
+
+  // Color legend
+  const defs    = svg.append('defs');
+  const gradId  = 'mapGrad-' + svgId;
+  const linGrad = defs.append('linearGradient').attr('id', gradId);
+  linGrad.append('stop').attr('offset', '0%').attr('stop-color', '#C8DCF0');
+  linGrad.append('stop').attr('offset', '100%').attr('stop-color', PALETTE.navy);
+  const legendG = svg.append('g').attr('transform', `translate(${w - 130}, ${h - 24})`);
+  legendG.append('rect').attr('width', 80).attr('height', 8).attr('rx', 2).attr('fill', `url(#${gradId})`);
+  legendG.append('text').attr('x', -3).attr('y', 7).attr('text-anchor', 'end').attr('font-size', 9).attr('fill', '#6B7280').text('Fewer');
+  legendG.append('text').attr('x', 83).attr('y', 7).attr('text-anchor', 'start').attr('font-size', 9).attr('fill', '#6B7280').text('More');
 }
 
 function buildPatronsByState(patronArr) {
@@ -148,9 +189,15 @@ function renderTab1() {
       fill: true, pointRadius: 0, borderWidth: 2, tension: 0.3,
     }]},
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          title: items => fmtDateLabel(dayLabels[items[0].dataIndex]),
+          label: ctx => ` Wager Volume: ${fmt.currency(ctx.parsed.y)}`,
+        }},
+      },
       scales: {
-        x: { ticks: { maxTicksLimit: 12, callback: (v) => dayLabels[v]?.slice(5) }, grid: { display: false } },
+        x: { ticks: { maxTicksLimit: 12, callback: v => fmtDateLabel(dayLabels[v]) }, grid: { display: false } },
         y: { ticks: { callback: v => fmt.currency(v) } },
       },
     },
@@ -170,7 +217,13 @@ function renderTab1() {
       { label: 'Prior Year',    data: priorVol,   backgroundColor: PALETTE.gray2, borderRadius: 3 },
     ]},
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } },
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          mode: 'index',
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt.currency(ctx.parsed.y)}` },
+        },
+      },
       scales: { y: { ticks: { callback: v => fmt.currency(v) } } },
     },
   });
@@ -187,9 +240,18 @@ function renderTab1() {
       { label: 'Withdrawals',  data: withByDay, borderColor: PALETTE.coral, backgroundColor: 'transparent', pointRadius: 0, borderWidth: 2, tension: 0.3 },
     ]},
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } },
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          mode: 'index',
+          callbacks: {
+            title: items => fmtDateLabel(dayLabels[items[0].dataIndex]),
+            label: ctx => ` ${ctx.dataset.label}: ${fmt.currency(ctx.parsed.y)}`,
+          },
+        },
+      },
       scales: {
-        x: { ticks: { maxTicksLimit: 12, callback: v => dayLabels[v]?.slice(5) }, grid: { display: false } },
+        x: { ticks: { maxTicksLimit: 12, callback: v => fmtDateLabel(dayLabels[v]) }, grid: { display: false } },
         y: { ticks: { callback: v => fmt.currency(v) } },
       },
     },
@@ -204,8 +266,15 @@ function renderTab1() {
     data: { labels: ['Mobile App', 'Web'], datasets: [{ data: [mobileVol, webVol],
       backgroundColor: [PALETTE.navy, PALETTE.slate], borderWidth: 0 }]},
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' },
-        tooltip: { callbacks: { label: ctx => `${ctx.label}: ${fmt.pct(ctx.parsed / (mobileVol + webVol))}` } } },
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: { callbacks: {
+          label: ctx => {
+            const total = mobileVol + webVol;
+            return ` ${ctx.label}: ${fmt.pct(total > 0 ? ctx.parsed / total : 0)} (${fmt.currency(ctx.parsed)})`;
+          },
+        }},
+      },
       cutout: '62%',
     },
   });
@@ -219,7 +288,10 @@ function renderTab1() {
     type: 'bar',
     data: { labels: stateData.map(s => s.state), datasets: [{ label: 'Volume', data: stateData.map(s => s.vol), backgroundColor: PALETTE.blue, borderRadius: 3 }]},
     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` Wager Volume: ${fmt.currency(ctx.parsed.x)}` } },
+      },
       scales: { x: { ticks: { callback: v => fmt.currency(v) } }, y: { grid: { display: false } } },
     },
   });
@@ -279,9 +351,15 @@ function renderTab2() {
       fill: true, pointRadius: 0, borderWidth: 2, tension: 0.3,
     }]},
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          title: items => fmtDateLabel(dayLabels[items[0].dataIndex]),
+          label: ctx => ` Wager Volume: ${fmt.currency(ctx.parsed.y)}`,
+        }},
+      },
       scales: {
-        x: { ticks: { maxTicksLimit: 12, callback: v => dayLabels[v]?.slice(5) }, grid: { display: false } },
+        x: { ticks: { maxTicksLimit: 12, callback: v => fmtDateLabel(dayLabels[v]) }, grid: { display: false } },
         y: { ticks: { callback: v => fmt.currency(v) } },
       },
     },
@@ -302,7 +380,10 @@ function renderTab2() {
       borderRadius: 3,
     }]},
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` Wager Volume: ${fmt.currency(ctx.parsed.y)}` } },
+      },
       scales: { y: { ticks: { callback: v => fmt.currency(v) } } },
     },
   });
@@ -313,13 +394,22 @@ function renderTab2() {
   const months = [...new Set(daily.map(r => r.date.slice(0,7)))].sort();
   CHARTS['t2-wagerTypeMix'] = new Chart(document.getElementById('t2-wagerTypeMix'), {
     type: 'bar',
-    data: { labels: months, datasets: [
+    data: { labels: months.map(m => fmtMonthLabel(m)), datasets: [
       { label: 'Pre-Game', data: months.map(m => daily.filter(r => r.date.startsWith(m)).reduce((s,r) => s + r.pregame_volume, 0)), backgroundColor: PALETTE.navy, stack: 'wt' },
       { label: 'Live',     data: months.map(m => daily.filter(r => r.date.startsWith(m)).reduce((s,r) => s + r.live_volume, 0)),    backgroundColor: PALETTE.blue,  stack: 'wt' },
       { label: 'Parlay',   data: months.map(m => daily.filter(r => r.date.startsWith(m)).reduce((s,r) => s + r.parlay_volume, 0)), backgroundColor: PALETTE.slate, stack: 'wt' },
     ]},
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } },
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          mode: 'index',
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${fmt.currency(ctx.parsed.y)}`,
+            afterBody: items => [` Total: ${fmt.currency(items.reduce((s, i) => s + i.parsed.y, 0))}`],
+          },
+        },
+      },
       scales: { x: { stacked: true }, y: { stacked: true, ticks: { callback: v => fmt.currency(v) } } },
     },
   });
@@ -341,8 +431,16 @@ function renderTab2() {
       backgroundColor: PALETTE.coral, borderRadius: 3,
     }]},
     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { x: { grid: { display: false } }, y: { grid: { display: false } } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          label: ctx => ` ${ctx.parsed.x.toFixed(1)} flags per 1K active accounts`,
+        }},
+      },
+      scales: {
+        x: { grid: { display: false }, title: { display: true, text: 'Flags per 1K Active Accounts', font: { size: 11 } } },
+        y: { grid: { display: false } },
+      },
     },
   });
 
@@ -396,7 +494,7 @@ function renderTab3() {
   });
   CHARTS['t3-eventsVerifRate'] = new Chart(document.getElementById('t3-eventsVerifRate'), {
     type: 'bar',
-    data: { labels: months.map(m => m.slice(5)),
+    data: { labels: months.map(m => fmtMonthLabel(m)),
       datasets: [
         { label: 'Events',             data: eventsByMo, backgroundColor: PALETTE.navy, borderRadius: 3, yAxisID: 'y' },
         { label: 'Verification Rate',  data: verifByMo,  type: 'line', borderColor: PALETTE.teal,
@@ -404,9 +502,19 @@ function renderTab3() {
       ],
     },
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } },
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          mode: 'index',
+          callbacks: {
+            label: ctx => ctx.datasetIndex === 0
+              ? ` Events: ${ctx.parsed.y}`
+              : ` Verification Rate: ${fmt.pct(ctx.parsed.y)}`,
+          },
+        },
+      },
       scales: {
-        y:  { type: 'linear', position: 'left',  title: { display: true, text: 'Events' } },
+        y:  { type: 'linear', position: 'left',  title: { display: true, text: 'Events', font: { size: 11 } } },
         y1: { type: 'linear', position: 'right', min: 0, max: 1,
               ticks: { callback: v => fmt.pct(v) }, grid: { drawOnChartArea: false } },
       },
@@ -425,7 +533,10 @@ function renderTab3() {
       label: 'Receipts', data: orgReceipts.map(o => o.total), backgroundColor: PALETTE.blue, borderRadius: 3,
     }]},
     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` Gross Receipts: ${fmt.currency(ctx.parsed.x)}` } },
+      },
       scales: { x: { ticks: { callback: v => fmt.currency(v) } }, y: { grid: { display: false } } },
     },
   });
@@ -442,7 +553,16 @@ function renderTab3() {
         backgroundColor: [PALETTE.navy, PALETTE.blue, PALETTE.teal], borderWidth: 0 }],
     },
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } }, cutout: '55%',
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: { callbacks: {
+          label: ctx => {
+            const total = (typeCounts.bingo || 0) + (typeCounts.raffle || 0) + (typeCounts.casino_night || 0);
+            return ` ${ctx.label}: ${ctx.parsed} events (${fmt.pct(total > 0 ? ctx.parsed / total : 0)})`;
+          },
+        }},
+      },
+      cutout: '55%',
     },
   });
 
@@ -460,7 +580,12 @@ function renderTab3() {
         backgroundColor: [PALETTE.navy, PALETTE.blue, PALETTE.teal], borderRadius: 3 }],
     },
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          label: ctx => ` ${ctx.label}: ${fmt.pct(ctx.parsed.y)} of events ran identity check`,
+        }},
+      },
       scales: { y: { min: 0, max: 1, ticks: { callback: v => fmt.pct(v) } } },
     },
   });
@@ -470,13 +595,18 @@ function renderTab3() {
   CHART_TOOLTIPS['t3-verifTrend'] = 'Year-to-date trajectory of identity check adoption — a flat or declining trend means the verification requirement is not taking hold without active enforcement.';
   CHARTS['t3-verifTrend'] = new Chart(document.getElementById('t3-verifTrend'), {
     type: 'line',
-    data: { labels: months.map(m => m.slice(5)), datasets: [{
+    data: { labels: months.map(m => fmtMonthLabel(m)), datasets: [{
       label: 'Verification Rate', data: verifByMo,
       borderColor: PALETTE.teal, backgroundColor: 'rgba(0,168,150,.08)',
       fill: true, pointRadius: 3, borderWidth: 2,
     }]},
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          label: ctx => ` Verification Rate: ${fmt.pct(ctx.parsed.y)}`,
+        }},
+      },
       scales: { y: { min: 0, max: 1, ticks: { callback: v => fmt.pct(v) } }, x: { grid: { display: false } } },
     },
   });
@@ -570,13 +700,13 @@ function renderTab4() {
           { sets: [t1Label, t2Label, t3Label], value: VENN_ALL_THREE },
         ],
         backgroundColor: [
-          'rgba(27,42,74,0.58)',
-          'rgba(46,97,143,0.58)',
-          'rgba(0,168,150,0.62)',
-          'rgba(36,70,108,0.65)',
-          'rgba(14,88,97,0.65)',
-          'rgba(23,130,146,0.62)',
-          'rgba(20,72,98,0.80)',
+          'rgba(27,42,74,0.72)',    // ADW — navy
+          'rgba(216,95,82,0.62)',   // Sports — coral/red
+          'rgba(0,168,150,0.68)',   // Charitable — teal
+          'rgba(120,64,62,0.78)',   // ADW + Sports overlap
+          'rgba(10,90,78,0.78)',    // ADW + Charitable overlap
+          'rgba(100,140,106,0.72)', // Sports + Charitable overlap
+          'rgba(62,72,58,0.88)',    // All three
         ],
       }],
     },
@@ -662,13 +792,22 @@ function renderTab4() {
     data: {
       labels: topPatrons.map((p, i) => `Patron ${i+1} (${p.risk_tier.charAt(0).toUpperCase() + p.risk_tier.slice(1)})`),
       datasets: [
-        { label: CONFIG.tabs.tab1.label, data: topPatrons.map(p => p.adw_wager_count || 0),     backgroundColor: PALETTE.navy,  stack: 'freq' },
-        { label: CONFIG.tabs.tab2.label, data: topPatrons.map(p => p.sports_wager_count || 0),  backgroundColor: PALETTE.blue,  stack: 'freq' },
-        { label: CONFIG.tabs.tab3.label, data: topPatrons.map(p => p.charitable_events_attended || 0), backgroundColor: PALETTE.teal, stack: 'freq' },
+        { label: CONFIG.tabs.tab1.label, data: topPatrons.map(p => p.adw_wager_count || 0),              backgroundColor: PALETTE.navy,  stack: 'freq' },
+        { label: CONFIG.tabs.tab2.label, data: topPatrons.map(p => p.sports_wager_count || 0),           backgroundColor: PALETTE.amber, stack: 'freq' },
+        { label: CONFIG.tabs.tab3.label, data: topPatrons.map(p => p.charitable_events_attended || 0),   backgroundColor: PALETTE.teal,  stack: 'freq' },
       ],
     },
     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } },
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          mode: 'index',
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${fmt.num(ctx.parsed.x)} wagers`,
+            afterBody: items => [` Total: ${fmt.num(items.reduce((s, i) => s + i.parsed.x, 0))} wagers`],
+          },
+        },
+      },
       scales: { x: { stacked: true, ticks: { callback: v => fmt.num(v) } }, y: { stacked: true, grid: { display: false } } },
     },
   });
@@ -681,13 +820,19 @@ function renderTab4() {
     data: {
       labels: OPERATOR_EXCLUSION_FEEDS.map(f => f.operator_name),
       datasets: [
-        { label: 'Exclusions Received',   data: OPERATOR_EXCLUSION_FEEDS.map(f => f.exclusion_count),    backgroundColor: PALETTE.slate,  borderRadius: 3 },
+        { label: 'Exclusions Received',   data: OPERATOR_EXCLUSION_FEEDS.map(f => f.exclusion_count),     backgroundColor: PALETTE.slate,  borderRadius: 3 },
         { label: 'Blocked Before Wager',  data: OPERATOR_EXCLUSION_FEEDS.map(f => f.blocks_before_wager), backgroundColor: PALETTE.teal,   borderRadius: 3 },
-        { label: 'Detected Breaches',     data: OPERATOR_EXCLUSION_FEEDS.map(f => f.detected_breaches),  backgroundColor: PALETTE.coral,  borderRadius: 3 },
+        { label: 'Detected Breaches',     data: OPERATOR_EXCLUSION_FEEDS.map(f => f.detected_breaches),   backgroundColor: PALETTE.coral,  borderRadius: 3 },
       ],
     },
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } },
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          mode: 'index',
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt.num(ctx.parsed.y)}` },
+        },
+      },
       scales: { y: { ticks: { callback: v => fmt.num(v) } } },
     },
   });

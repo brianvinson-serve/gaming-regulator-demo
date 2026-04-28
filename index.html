@@ -5,42 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Patron Identity Resolution Demo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-venn@4.3.0/build/index.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
   <style>/* ── Resultant Brand Tokens ── */
     :root {
-      --navy:       #1B2A4A;
-      --teal:       #00A896;
-      --teal-light: #E6F7F5;
-      --white:      #FFFFFF;
-      --gray-50:    #F8F9FA;
-      --gray-100:   #EEF0F3;
-      --gray-200:   #D4D8DF;
-      --gray-600:   #6B7280;
-      --gray-900:   #111827;
-      --accent-red: #D85F52;
-      --font:        'Inter', system-ui, sans-serif;
-      --radius:      6px;
-      --shadow-sm:   0 1px 3px rgba(0,0,0,.08);
-      --shadow-md:   0 4px 12px rgba(0,0,0,.10);
+      --navy:         #1B2A4A;
+      --teal:         #00A896;
+      --teal-light:   #E6F7F5;
+      --white:        #FFFFFF;
+      --gray-50:      #F8F9FA;
+      --gray-100:     #EEF0F3;
+      --gray-200:     #D4D8DF;
+      --gray-600:     #6B7280;
+      --gray-900:     #111827;
+      --accent-red:   #D85F52;
+      --amber:        #D97706;
+      --font:         'DM Sans', system-ui, sans-serif;
+      --font-display: 'Barlow Condensed', 'DM Sans', sans-serif;
+      --radius:       6px;
+      --shadow-sm:    0 1px 3px rgba(0,0,0,.08);
+      --shadow-md:    0 4px 12px rgba(0,0,0,.10);
+      --shadow-lg:    0 8px 24px rgba(0,0,0,.12);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: var(--font); background: var(--gray-50); color: var(--gray-900); font-size: 14px; }
+
+    /* ── Header ── */
     #app-header {
       display: flex; align-items: center; gap: 16px;
       background: var(--navy); color: var(--white);
       padding: 12px 24px; height: 56px;
     }
     #logo-area {
-      border: 2px dashed rgba(255,255,255,.4);
-      padding: 4px 12px; border-radius: var(--radius);
-      font-size: 12px; color: rgba(255,255,255,.7);
-      min-width: 140px; text-align: center;
+      border: none; padding: 0;
+      min-width: 140px;
     }
-    #org-name { font-size: 16px; font-weight: 600; }
+    #org-name { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+
+    /* ── Tab Bar ── */
     #tab-bar {
       display: flex; gap: 0;
       background: var(--white);
@@ -51,20 +57,24 @@
       background: none; border: none; cursor: pointer;
       padding: 14px 20px; font-family: var(--font); font-size: 14px; font-weight: 500;
       color: var(--gray-600); border-bottom: 3px solid transparent; margin-bottom: -2px;
-      transition: color .15s, border-color .15s;
+      transition: color .15s, border-color .15s, background .15s;
       display: flex; align-items: center; gap: 8px;
     }
-    .tab-btn:hover { color: var(--navy); }
-    .tab-btn.active { color: var(--navy); border-bottom-color: var(--teal); }
+    .tab-btn:hover { color: var(--navy); background: var(--gray-50); }
+    .tab-btn.active { color: var(--navy); border-bottom-color: var(--teal); font-weight: 600; }
     .p3rl-badge {
       background: var(--teal); color: var(--white);
-      font-size: 10px; font-weight: 600;
+      font-size: 10px; font-weight: 700;
       padding: 2px 8px; border-radius: 99px;
-      white-space: nowrap;
+      white-space: nowrap; letter-spacing: 0.02em;
     }
+
+    /* ── Main Layout ── */
     #app-main { padding: 24px; }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
+
+    /* ── Filter Bar ── */
     .filter-bar {
       display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
       background: var(--white); border: 1px solid var(--gray-200);
@@ -72,26 +82,30 @@
       margin-bottom: 20px; box-shadow: var(--shadow-sm);
     }
     .filter-group { display: flex; align-items: center; gap: 6px; }
-    .filter-label { font-size: 12px; font-weight: 600; color: var(--gray-600); white-space: nowrap; }
+    .filter-label { font-size: 11px; font-weight: 600; color: var(--gray-600); white-space: nowrap; text-transform: uppercase; letter-spacing: 0.04em; }
     .filter-select {
       font-family: var(--font); font-size: 13px;
       border: 1px solid var(--gray-200); border-radius: var(--radius);
       padding: 6px 10px; background: var(--white); color: var(--gray-900);
       cursor: pointer; min-width: 140px;
     }
-    .filter-select:focus { outline: none; border-color: var(--teal); }
+    .filter-select:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(0,168,150,.1); }
     .btn-reset {
       margin-left: auto; background: none; border: 1px solid var(--gray-200);
       border-radius: var(--radius); padding: 6px 14px; font-family: var(--font);
       font-size: 13px; color: var(--gray-600); cursor: pointer;
+      transition: border-color .15s, color .15s;
     }
     .btn-reset:hover { border-color: var(--navy); color: var(--navy); }
     .btn-export {
       background: var(--teal); border: none; border-radius: var(--radius);
       padding: 6px 16px; font-family: var(--font); font-size: 13px;
       font-weight: 600; color: var(--white); cursor: pointer;
+      transition: background .15s;
     }
     .btn-export:hover { background: #008a7a; }
+
+    /* ── BAN Cards ── */
     .ban-row {
       display: grid; grid-template-columns: repeat(6, 1fr);
       gap: 16px; margin-bottom: 24px;
@@ -101,14 +115,25 @@
       border-radius: var(--radius); padding: 16px 20px;
       box-shadow: var(--shadow-sm); position: relative;
       text-align: center;
+      transition: box-shadow .15s, transform .15s;
+    }
+    .ban-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
     }
     .ban-card.lead { border-top: 3px solid var(--teal); }
-    .ban-label { font-size: 12px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; }
-    .ban-value { font-size: 26px; font-weight: 700; color: var(--navy); line-height: 1.1; }
-    .ban-card.lead .ban-value { font-size: 36px; color: var(--teal); }
-    .ban-delta { font-size: 12px; font-weight: 600; margin-top: 4px; }
+    .ban-label { font-size: 11px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .ban-value {
+      font-family: var(--font-display);
+      font-size: 28px; font-weight: 600; color: var(--navy); line-height: 1.1;
+      letter-spacing: 0.01em;
+    }
+    .ban-card.lead .ban-value { font-size: 38px; color: var(--teal); }
+    .ban-delta { font-size: 12px; font-weight: 600; margin-top: 4px; letter-spacing: -0.01em; }
     .ban-delta.pos { color: var(--teal); }
     .ban-delta.neg { color: var(--accent-red); }
+
+    /* ── Chart Grid ── */
     .chart-grid {
       display: grid; gap: 20px;
       grid-template-columns: 1fr;
@@ -123,34 +148,22 @@
     }
     .chart-title {
       font-size: 13px; font-weight: 600; color: var(--gray-900);
-      margin-bottom: 14px;
+      margin-bottom: 14px; display: flex; align-items: center;
     }
     .chart-container { position: relative; }
-    .p3rl-teaser {
-      display: flex; align-items: center; gap: 16px;
-      background: var(--navy); color: var(--white);
-      border-radius: var(--radius); padding: 16px 20px;
-      margin-top: 24px;
-    }
-    .p3rl-teaser-icon { font-size: 24px; }
-    .p3rl-teaser-text { font-size: 14px; font-weight: 500; }
-    #match-banner {
-      background: linear-gradient(135deg, var(--navy) 0%, #243b6e 100%);
-      color: var(--white); border-radius: var(--radius);
-      padding: 18px 24px; margin-bottom: 20px;
-      display: flex; flex-wrap: wrap; align-items: center; gap: 24px;
-      box-shadow: var(--shadow-md);
-    }
-    .match-banner-headline { font-size: 20px; font-weight: 700; }
-    .match-banner-headline span { color: var(--teal); }
-    .match-stats { display: flex; gap: 24px; flex-wrap: wrap; }
-    .match-stat { font-size: 13px; color: rgba(255,255,255,.75); }
-    .match-stat strong { color: var(--white); }
+
+    /* ── Chart Info Icon ── */
     .chart-info-icon {
-      display: inline-block; margin-left: 6px;
-      font-size: 12px; color: var(--gray-600);
-      cursor: help; vertical-align: middle; line-height: 1;
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-left: 8px; width: 16px; height: 16px; flex-shrink: 0;
+      border-radius: 50%; background: var(--gray-100);
+      font-size: 10px; font-weight: 700; color: var(--gray-600);
+      cursor: help; vertical-align: middle;
+      transition: background .12s, color .12s;
     }
+    .chart-info-icon:hover { background: var(--gray-600); color: #fff; }
+
+    /* ── Tooltip (CSS attr-based) ── */
     [data-tooltip] { position: relative; cursor: help; }
     [data-tooltip]::after {
       content: attr(data-tooltip);
@@ -182,13 +195,15 @@
       color: #fff;
       padding: 8px 12px;
       border-radius: 4px;
-      font-size: 11px;
+      font-size: 12px;
       line-height: 1.7;
       pointer-events: none;
       white-space: nowrap;
       z-index: 200;
       display: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
     }
+    .map-tooltip strong { font-weight: 700; }
     .map-legend {
       display: flex;
       align-items: center;
@@ -205,90 +220,107 @@
       border-radius: 2px;
     }
 
-/* ── Match Banner (Tab 4, full width, above filters) ── */
-.match-banner {
-  background: #1B2A4A;
-  color: #fff;
-  padding: 18px 24px;
-  border-radius: 6px;
-  margin-bottom: 12px;
-}
-.match-banner-sub {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: #7BA4C8;
-  margin-bottom: 6px;
-}
-.match-banner-headline {
-  font-size: 22px;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-.match-banner-stats {
-  display: flex;
-  gap: 28px;
-  flex-wrap: wrap;
-  font-size: 13px;
-  color: #BDD0E6;
-}
-.match-banner-stats strong { color: #fff; }
-.match-violation { color: #F97B72 !important; }
-.match-violation strong { color: #F97B72 !important; }
+    /* ── Match Banner (Tab 4) ── */
+    .match-banner {
+      background: #1B2A4A;
+      color: #fff;
+      padding: 18px 24px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      border-left: 4px solid var(--teal);
+      box-shadow: var(--shadow-md);
+    }
+    .match-banner-sub {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .10em;
+      color: #7BA4C8;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .match-banner-headline {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: 0.01em;
+      line-height: 1.1;
+    }
+    .match-banner-stats {
+      display: flex;
+      gap: 28px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: #BDD0E6;
+    }
+    .match-banner-stats strong { color: #fff; }
+    .match-violation { color: #F97B72 !important; }
+    .match-violation strong { color: #F97B72 !important; }
 
-/* ── Delta Sharing Feed Panel ── */
-.delta-feed-panel {
-  background: #243B55;
-  border: 1px solid #2E4F6B;
-  border-radius: 6px;
-  padding: 14px 18px;
-  margin-bottom: 12px;
-}
-.delta-feed-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: #7BA4C8;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-.delta-feed-rows {
-  display: grid;
-  grid-template-columns: 1fr auto auto auto;
-  gap: 5px 20px;
-  align-items: center;
-  font-family: 'SFMono-Regular', 'Consolas', monospace;
-  font-size: 12px;
-  margin-bottom: 10px;
-}
-.feed-name  { color: #C5D8EC; }
-.feed-count { color: #8BA8BF; }
-.feed-sync  { color: #6B8CA8; }
-.feed-check { color: #36A594; font-weight: 700; }
-.delta-feed-summary {
-  padding-top: 10px;
-  border-top: 1px solid #2E4F6B;
-  font-size: 12px;
-  color: #8BA8BF;
-  font-family: 'SFMono-Regular', 'Consolas', monospace;
-}
-.delta-feed-summary strong { color: #C5D8EC; }
+    /* ── Delta Sharing Feed Panel ── */
+    .delta-feed-panel {
+      background: #243B55;
+      border: 1px solid #2E4F6B;
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin-bottom: 12px;
+    }
+    .delta-feed-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .10em;
+      color: #7BA4C8;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .delta-feed-rows {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 5px 20px;
+      align-items: center;
+      font-family: 'SFMono-Regular', 'Consolas', monospace;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+    .feed-name  { color: #C5D8EC; }
+    .feed-count { color: #8BA8BF; }
+    .feed-sync  { color: #6B8CA8; }
+    .feed-check { color: #36A594; font-weight: 700; font-size: 14px; }
+    .delta-feed-summary {
+      padding-top: 10px;
+      border-top: 1px solid #2E4F6B;
+      font-size: 12px;
+      color: #8BA8BF;
+      font-family: 'SFMono-Regular', 'Consolas', monospace;
+    }
+    .delta-feed-summary strong { color: #C5D8EC; }
 
-/* ── Teaser Footer (bottom of tabs 1–3) ── */
-.teaser-footer {
-  margin-top: 20px;
-  padding: 12px 16px;
-  border-top: 1px solid #E2E8F0;
-  font-size: 12px;
-  color: #64748B;
-  font-style: italic;
-}
-.teaser-footer a {
-  color: #0074C8;
-  text-decoration: none;
-  font-style: normal;
-  font-weight: 500;
-}
+    /* ── Teaser Footer ── */
+    .teaser-footer {
+      margin-top: 20px;
+      padding: 12px 16px;
+      border-top: 1px solid #E2E8F0;
+      font-size: 12px;
+      color: #64748B;
+      font-style: italic;
+    }
+    .teaser-footer a {
+      color: var(--teal);
+      text-decoration: none;
+      font-style: normal;
+      font-weight: 600;
+    }
+    .teaser-footer a:hover { text-decoration: underline; }
+
+    /* ── Misc legacy selectors ── */
+    .p3rl-teaser {
+      display: flex; align-items: center; gap: 16px;
+      background: var(--navy); color: var(--white);
+      border-radius: var(--radius); padding: 16px 20px;
+      margin-top: 24px;
+    }
+    .p3rl-teaser-icon { font-size: 24px; }
+    .p3rl-teaser-text { font-size: 14px; font-weight: 500; }
 </style>
 </head>
 <body>
@@ -448,7 +480,7 @@
       </div>
       <div class="chart-grid chart-grid-2">
         <div class="chart-card">
-          <div class="chart-title">Self-Exclusion Match Rate by Operator</div>
+          <div class="chart-title">Exclusion Flag Rate by Operator</div>
           <div class="chart-container" style="height:220px"><canvas id="t2-exclusionByOp"></canvas></div>
         </div>
         <div class="chart-card">
@@ -1108,9 +1140,20 @@ function destroyChart(id) {
   if (CHARTS[id]) { CHARTS[id].destroy(); delete CHARTS[id]; }
 }
 
-Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+Chart.defaults.font.family = "'DM Sans', system-ui, sans-serif";
 Chart.defaults.font.size   = 12;
 Chart.defaults.color       = '#6B7280';
+
+const MONTH_ABBREVS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDateLabel(dateStr) {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  return MONTH_ABBREVS[parseInt(parts[1]) - 1] + ' ' + parseInt(parts[2]);
+}
+function fmtMonthLabel(yyyyMM) {
+  if (!yyyyMM) return '';
+  return MONTH_ABBREVS[parseInt(yyyyMM.split('-')[1]) - 1];
+}
 
 const PALETTE = {
   navy:   '#1B2A4A',
@@ -1155,7 +1198,7 @@ function renderChoropleth(svgId, patronsByState, _attempt) {
   const maxVal = Math.max(1, ...Object.values(patronsByState));
   const colorScale = d3.scaleSequential()
     .domain([0, maxVal])
-    .interpolator(d3.interpolate('#B8CCE0', PALETTE.navy));
+    .interpolator(d3.interpolate('#C8DCF0', PALETTE.navy));
 
   const FIPS_ABBREV = {
     '01':'AL','02':'AK','04':'AZ','05':'AR','06':'CA','08':'CO','09':'CT',
@@ -1167,6 +1210,14 @@ function renderChoropleth(svgId, patronsByState, _attempt) {
     '49':'UT','50':'VT','51':'VA','53':'WA','54':'WV','55':'WI','56':'WY',
   };
 
+  // D3 hover tooltip — remove stale one first
+  const parentEl = svgEl.parentNode;
+  const existingTip = parentEl.querySelector('.map-tooltip');
+  if (existingTip) existingTip.remove();
+  const tipDiv = document.createElement('div');
+  tipDiv.className = 'map-tooltip';
+  parentEl.appendChild(tipDiv);
+
   svg.selectAll('path')
     .data(statesGeo.features)
     .enter().append('path')
@@ -1177,12 +1228,34 @@ function renderChoropleth(svgId, patronsByState, _attempt) {
       })
       .attr('stroke', '#fff')
       .attr('stroke-width', 0.5)
-    .append('title')
-      .text(d => {
+      .style('cursor', 'pointer')
+      .on('mouseover', function(event, d) {
         const abbrev = FIPS_ABBREV[String(d.id).padStart(2,'0')] || '?';
         const count  = patronsByState[abbrev] || 0;
-        return `${abbrev}: ${count.toLocaleString()} patrons`;
+        d3.select(this).attr('stroke-width', 2).attr('stroke', '#00A896');
+        tipDiv.style.display = 'block';
+        tipDiv.innerHTML = `<strong>${abbrev}</strong><br>${count.toLocaleString()} patrons`;
+      })
+      .on('mousemove', function(event) {
+        const parentRect = parentEl.getBoundingClientRect();
+        tipDiv.style.left = (event.clientX - parentRect.left + 14) + 'px';
+        tipDiv.style.top  = (event.clientY - parentRect.top  - 44) + 'px';
+      })
+      .on('mouseout', function() {
+        d3.select(this).attr('stroke-width', 0.5).attr('stroke', '#fff');
+        tipDiv.style.display = 'none';
       });
+
+  // Color legend
+  const defs    = svg.append('defs');
+  const gradId  = 'mapGrad-' + svgId;
+  const linGrad = defs.append('linearGradient').attr('id', gradId);
+  linGrad.append('stop').attr('offset', '0%').attr('stop-color', '#C8DCF0');
+  linGrad.append('stop').attr('offset', '100%').attr('stop-color', PALETTE.navy);
+  const legendG = svg.append('g').attr('transform', `translate(${w - 130}, ${h - 24})`);
+  legendG.append('rect').attr('width', 80).attr('height', 8).attr('rx', 2).attr('fill', `url(#${gradId})`);
+  legendG.append('text').attr('x', -3).attr('y', 7).attr('text-anchor', 'end').attr('font-size', 9).attr('fill', '#6B7280').text('Fewer');
+  legendG.append('text').attr('x', 83).attr('y', 7).attr('text-anchor', 'start').attr('font-size', 9).attr('fill', '#6B7280').text('More');
 }
 
 function buildPatronsByState(patronArr) {
@@ -1248,9 +1321,15 @@ function renderTab1() {
       fill: true, pointRadius: 0, borderWidth: 2, tension: 0.3,
     }]},
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          title: items => fmtDateLabel(dayLabels[items[0].dataIndex]),
+          label: ctx => ` Wager Volume: ${fmt.currency(ctx.parsed.y)}`,
+        }},
+      },
       scales: {
-        x: { ticks: { maxTicksLimit: 12, callback: (v) => dayLabels[v]?.slice(5) }, grid: { display: false } },
+        x: { ticks: { maxTicksLimit: 12, callback: v => fmtDateLabel(dayLabels[v]) }, grid: { display: false } },
         y: { ticks: { callback: v => fmt.currency(v) } },
       },
     },
@@ -1270,7 +1349,13 @@ function renderTab1() {
       { label: 'Prior Year',    data: priorVol,   backgroundColor: PALETTE.gray2, borderRadius: 3 },
     ]},
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } },
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          mode: 'index',
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt.currency(ctx.parsed.y)}` },
+        },
+      },
       scales: { y: { ticks: { callback: v => fmt.currency(v) } } },
     },
   });
@@ -1287,9 +1372,18 @@ function renderTab1() {
       { label: 'Withdrawals',  data: withByDay, borderColor: PALETTE.coral, backgroundColor: 'transparent', pointRadius: 0, borderWidth: 2, tension: 0.3 },
     ]},
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } },
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          mode: 'index',
+          callbacks: {
+            title: items => fmtDateLabel(dayLabels[items[0].dataIndex]),
+            label: ctx => ` ${ctx.dataset.label}: ${fmt.currency(ctx.parsed.y)}`,
+          },
+        },
+      },
       scales: {
-        x: { ticks: { maxTicksLimit: 12, callback: v => dayLabels[v]?.slice(5) }, grid: { display: false } },
+        x: { ticks: { maxTicksLimit: 12, callback: v => fmtDateLabel(dayLabels[v]) }, grid: { display: false } },
         y: { ticks: { callback: v => fmt.currency(v) } },
       },
     },
@@ -1304,8 +1398,15 @@ function renderTab1() {
     data: { labels: ['Mobile App', 'Web'], datasets: [{ data: [mobileVol, webVol],
       backgroundColor: [PALETTE.navy, PALETTE.slate], borderWidth: 0 }]},
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' },
-        tooltip: { callbacks: { label: ctx => `${ctx.label}: ${fmt.pct(ctx.parsed / (mobileVol + webVol))}` } } },
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: { callbacks: {
+          label: ctx => {
+            const total = mobileVol + webVol;
+            return ` ${ctx.label}: ${fmt.pct(total > 0 ? ctx.parsed / total : 0)} (${fmt.currency(ctx.parsed)})`;
+          },
+        }},
+      },
       cutout: '62%',
     },
   });
@@ -1319,7 +1420,10 @@ function renderTab1() {
     type: 'bar',
     data: { labels: stateData.map(s => s.state), datasets: [{ label: 'Volume', data: stateData.map(s => s.vol), backgroundColor: PALETTE.blue, borderRadius: 3 }]},
     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` Wager Volume: ${fmt.currency(ctx.parsed.x)}` } },
+      },
       scales: { x: { ticks: { callback: v => fmt.currency(v) } }, y: { grid: { display: false } } },
     },
   });
@@ -1379,9 +1483,15 @@ function renderTab2() {
       fill: true, pointRadius: 0, borderWidth: 2, tension: 0.3,
     }]},
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          title: items => fmtDateLabel(dayLabels[items[0].dataIndex]),
+          label: ctx => ` Wager Volume: ${fmt.currency(ctx.parsed.y)}`,
+        }},
+      },
       scales: {
-        x: { ticks: { maxTicksLimit: 12, callback: v => dayLabels[v]?.slice(5) }, grid: { display: false } },
+        x: { ticks: { maxTicksLimit: 12, callback: v => fmtDateLabel(dayLabels[v]) }, grid: { display: false } },
         y: { ticks: { callback: v => fmt.currency(v) } },
       },
     },
@@ -1402,7 +1512,10 @@ function renderTab2() {
       borderRadius: 3,
     }]},
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` Wager Volume: ${fmt.currency(ctx.parsed.y)}` } },
+      },
       scales: { y: { ticks: { callback: v => fmt.currency(v) } } },
     },
   });
@@ -1413,13 +1526,22 @@ function renderTab2() {
   const months = [...new Set(daily.map(r => r.date.slice(0,7)))].sort();
   CHARTS['t2-wagerTypeMix'] = new Chart(document.getElementById('t2-wagerTypeMix'), {
     type: 'bar',
-    data: { labels: months, datasets: [
+    data: { labels: months.map(m => fmtMonthLabel(m)), datasets: [
       { label: 'Pre-Game', data: months.map(m => daily.filter(r => r.date.startsWith(m)).reduce((s,r) => s + r.pregame_volume, 0)), backgroundColor: PALETTE.navy, stack: 'wt' },
       { label: 'Live',     data: months.map(m => daily.filter(r => r.date.startsWith(m)).reduce((s,r) => s + r.live_volume, 0)),    backgroundColor: PALETTE.blue,  stack: 'wt' },
       { label: 'Parlay',   data: months.map(m => daily.filter(r => r.date.startsWith(m)).reduce((s,r) => s + r.parlay_volume, 0)), backgroundColor: PALETTE.slate, stack: 'wt' },
     ]},
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } },
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          mode: 'index',
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${fmt.currency(ctx.parsed.y)}`,
+            afterBody: items => [` Total: ${fmt.currency(items.reduce((s, i) => s + i.parsed.y, 0))}`],
+          },
+        },
+      },
       scales: { x: { stacked: true }, y: { stacked: true, ticks: { callback: v => fmt.currency(v) } } },
     },
   });
@@ -1441,8 +1563,16 @@ function renderTab2() {
       backgroundColor: PALETTE.coral, borderRadius: 3,
     }]},
     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { x: { grid: { display: false } }, y: { grid: { display: false } } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          label: ctx => ` ${ctx.parsed.x.toFixed(1)} flags per 1K active accounts`,
+        }},
+      },
+      scales: {
+        x: { grid: { display: false }, title: { display: true, text: 'Flags per 1K Active Accounts', font: { size: 11 } } },
+        y: { grid: { display: false } },
+      },
     },
   });
 
@@ -1496,7 +1626,7 @@ function renderTab3() {
   });
   CHARTS['t3-eventsVerifRate'] = new Chart(document.getElementById('t3-eventsVerifRate'), {
     type: 'bar',
-    data: { labels: months.map(m => m.slice(5)),
+    data: { labels: months.map(m => fmtMonthLabel(m)),
       datasets: [
         { label: 'Events',             data: eventsByMo, backgroundColor: PALETTE.navy, borderRadius: 3, yAxisID: 'y' },
         { label: 'Verification Rate',  data: verifByMo,  type: 'line', borderColor: PALETTE.teal,
@@ -1504,9 +1634,19 @@ function renderTab3() {
       ],
     },
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } },
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          mode: 'index',
+          callbacks: {
+            label: ctx => ctx.datasetIndex === 0
+              ? ` Events: ${ctx.parsed.y}`
+              : ` Verification Rate: ${fmt.pct(ctx.parsed.y)}`,
+          },
+        },
+      },
       scales: {
-        y:  { type: 'linear', position: 'left',  title: { display: true, text: 'Events' } },
+        y:  { type: 'linear', position: 'left',  title: { display: true, text: 'Events', font: { size: 11 } } },
         y1: { type: 'linear', position: 'right', min: 0, max: 1,
               ticks: { callback: v => fmt.pct(v) }, grid: { drawOnChartArea: false } },
       },
@@ -1525,7 +1665,10 @@ function renderTab3() {
       label: 'Receipts', data: orgReceipts.map(o => o.total), backgroundColor: PALETTE.blue, borderRadius: 3,
     }]},
     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` Gross Receipts: ${fmt.currency(ctx.parsed.x)}` } },
+      },
       scales: { x: { ticks: { callback: v => fmt.currency(v) } }, y: { grid: { display: false } } },
     },
   });
@@ -1542,7 +1685,16 @@ function renderTab3() {
         backgroundColor: [PALETTE.navy, PALETTE.blue, PALETTE.teal], borderWidth: 0 }],
     },
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } }, cutout: '55%',
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: { callbacks: {
+          label: ctx => {
+            const total = (typeCounts.bingo || 0) + (typeCounts.raffle || 0) + (typeCounts.casino_night || 0);
+            return ` ${ctx.label}: ${ctx.parsed} events (${fmt.pct(total > 0 ? ctx.parsed / total : 0)})`;
+          },
+        }},
+      },
+      cutout: '55%',
     },
   });
 
@@ -1560,7 +1712,12 @@ function renderTab3() {
         backgroundColor: [PALETTE.navy, PALETTE.blue, PALETTE.teal], borderRadius: 3 }],
     },
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          label: ctx => ` ${ctx.label}: ${fmt.pct(ctx.parsed.y)} of events ran identity check`,
+        }},
+      },
       scales: { y: { min: 0, max: 1, ticks: { callback: v => fmt.pct(v) } } },
     },
   });
@@ -1570,13 +1727,18 @@ function renderTab3() {
   CHART_TOOLTIPS['t3-verifTrend'] = 'Year-to-date trajectory of identity check adoption — a flat or declining trend means the verification requirement is not taking hold without active enforcement.';
   CHARTS['t3-verifTrend'] = new Chart(document.getElementById('t3-verifTrend'), {
     type: 'line',
-    data: { labels: months.map(m => m.slice(5)), datasets: [{
+    data: { labels: months.map(m => fmtMonthLabel(m)), datasets: [{
       label: 'Verification Rate', data: verifByMo,
       borderColor: PALETTE.teal, backgroundColor: 'rgba(0,168,150,.08)',
       fill: true, pointRadius: 3, borderWidth: 2,
     }]},
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          label: ctx => ` Verification Rate: ${fmt.pct(ctx.parsed.y)}`,
+        }},
+      },
       scales: { y: { min: 0, max: 1, ticks: { callback: v => fmt.pct(v) } }, x: { grid: { display: false } } },
     },
   });
@@ -1670,13 +1832,13 @@ function renderTab4() {
           { sets: [t1Label, t2Label, t3Label], value: VENN_ALL_THREE },
         ],
         backgroundColor: [
-          'rgba(27,42,74,0.58)',
-          'rgba(46,97,143,0.58)',
-          'rgba(0,168,150,0.62)',
-          'rgba(36,70,108,0.65)',
-          'rgba(14,88,97,0.65)',
-          'rgba(23,130,146,0.62)',
-          'rgba(20,72,98,0.80)',
+          'rgba(27,42,74,0.72)',    // ADW — navy
+          'rgba(216,95,82,0.62)',   // Sports — coral/red
+          'rgba(0,168,150,0.68)',   // Charitable — teal
+          'rgba(120,64,62,0.78)',   // ADW + Sports overlap
+          'rgba(10,90,78,0.78)',    // ADW + Charitable overlap
+          'rgba(100,140,106,0.72)', // Sports + Charitable overlap
+          'rgba(62,72,58,0.88)',    // All three
         ],
       }],
     },
@@ -1762,13 +1924,22 @@ function renderTab4() {
     data: {
       labels: topPatrons.map((p, i) => `Patron ${i+1} (${p.risk_tier.charAt(0).toUpperCase() + p.risk_tier.slice(1)})`),
       datasets: [
-        { label: CONFIG.tabs.tab1.label, data: topPatrons.map(p => p.adw_wager_count || 0),     backgroundColor: PALETTE.navy,  stack: 'freq' },
-        { label: CONFIG.tabs.tab2.label, data: topPatrons.map(p => p.sports_wager_count || 0),  backgroundColor: PALETTE.blue,  stack: 'freq' },
-        { label: CONFIG.tabs.tab3.label, data: topPatrons.map(p => p.charitable_events_attended || 0), backgroundColor: PALETTE.teal, stack: 'freq' },
+        { label: CONFIG.tabs.tab1.label, data: topPatrons.map(p => p.adw_wager_count || 0),              backgroundColor: PALETTE.navy,  stack: 'freq' },
+        { label: CONFIG.tabs.tab2.label, data: topPatrons.map(p => p.sports_wager_count || 0),           backgroundColor: PALETTE.amber, stack: 'freq' },
+        { label: CONFIG.tabs.tab3.label, data: topPatrons.map(p => p.charitable_events_attended || 0),   backgroundColor: PALETTE.teal,  stack: 'freq' },
       ],
     },
     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } },
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          mode: 'index',
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${fmt.num(ctx.parsed.x)} wagers`,
+            afterBody: items => [` Total: ${fmt.num(items.reduce((s, i) => s + i.parsed.x, 0))} wagers`],
+          },
+        },
+      },
       scales: { x: { stacked: true, ticks: { callback: v => fmt.num(v) } }, y: { stacked: true, grid: { display: false } } },
     },
   });
@@ -1781,13 +1952,19 @@ function renderTab4() {
     data: {
       labels: OPERATOR_EXCLUSION_FEEDS.map(f => f.operator_name),
       datasets: [
-        { label: 'Exclusions Received',   data: OPERATOR_EXCLUSION_FEEDS.map(f => f.exclusion_count),    backgroundColor: PALETTE.slate,  borderRadius: 3 },
+        { label: 'Exclusions Received',   data: OPERATOR_EXCLUSION_FEEDS.map(f => f.exclusion_count),     backgroundColor: PALETTE.slate,  borderRadius: 3 },
         { label: 'Blocked Before Wager',  data: OPERATOR_EXCLUSION_FEEDS.map(f => f.blocks_before_wager), backgroundColor: PALETTE.teal,   borderRadius: 3 },
-        { label: 'Detected Breaches',     data: OPERATOR_EXCLUSION_FEEDS.map(f => f.detected_breaches),  backgroundColor: PALETTE.coral,  borderRadius: 3 },
+        { label: 'Detected Breaches',     data: OPERATOR_EXCLUSION_FEEDS.map(f => f.detected_breaches),   backgroundColor: PALETTE.coral,  borderRadius: 3 },
       ],
     },
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } },
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          mode: 'index',
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt.num(ctx.parsed.y)}` },
+        },
+      },
       scales: { y: { ticks: { callback: v => fmt.num(v) } } },
     },
   });
